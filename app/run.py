@@ -32,7 +32,7 @@ engine = create_engine('sqlite:///../data/DisasterResponse.db')
 df = pd.read_sql_table('cleaned_data', engine)
 
 # load model
-model = joblib.load("../models/classifier_simple.pkl")
+model = joblib.load("../models/classifier.pkl")
 
 
 # index webpage displays cool visuals and receives user input text for model
@@ -43,6 +43,10 @@ def index():
     # TODO: Below is an example - modify to extract data for your own visuals
     genre_counts = df.groupby('genre').count()['message']
     genre_names = list(genre_counts.index)
+
+    df_2 = df.drop(columns=["id", "message", "original", "genre"])
+    categories_list = list(map(lambda x: x.replace('_', ' '), list(df_2.columns)))
+    categories_example_count = list(df_2.sum().values)
 
     # create visuals
     # TODO: Below is an example - modify to create your own visuals
@@ -64,7 +68,26 @@ def index():
                     'title': "Genre"
                 }
             }
-        }
+        },
+        {
+            'data': [
+                Bar(
+                    x=categories_list,
+                    y=categories_example_count
+                )
+            ],
+
+            'layout': {
+                'title': 'Number of training set examples messages for each category.',
+                'yaxis': {
+                    'title': "Count"
+                },
+                'xaxis': {
+                    'title': "Category"
+                }
+            }
+        },
+
     ]
 
     # encode plotly graphs in JSON
