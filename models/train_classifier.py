@@ -1,13 +1,19 @@
+"""
+train_classifier.py
+--------------------------------------------------
+This script takes the cleaned data and creates a machine learning model for later use.
+"""
+
+# Importing necessary libraries
 import re
 import ssl
 import sys
 
 import nltk
-# import libraries
 import pandas as pd
 from sqlalchemy import create_engine
 
-# running nltk download gave ssl error.
+# running nltk.download() locally gave ssl error. Rectification code below
 # Resolution reference: https://github.com/gunthercox/ChatterBot/issues/930#issuecomment-322111087
 try:
     _create_unverified_https_context = ssl._create_unverified_context
@@ -27,6 +33,16 @@ from sklearn.model_selection import train_test_split
 
 
 def load_data(database_filepath):
+    """ Function to load data from the sqlite database and returns the feature and target dfs.
+
+    Args:
+        database_filepath: the path of sqlite database file
+
+    Returns:
+        (tuple): Returns a tuple consisting of feature, target, and target column names
+                (as its a multi-output classifier) example.
+    """
+
     # load data from database
     engine = create_engine(f'sqlite:///{database_filepath}')
     df = pd.read_sql_table('cleaned_data', engine)
@@ -45,6 +61,15 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """ Custom tokenizer function
+    
+    Args:
+        text: sentences to be tokenized.
+
+    Returns:
+        (list): a list of token after tokenization.
+    """""
+
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
 
     tokens = word_tokenize(text)
@@ -59,6 +84,11 @@ def tokenize(text):
 
 
 def build_model():
+    """ Function to build create ml pipeline and create a GridSearch Model.
+
+    Returns:
+        (object): returns a Gridsearch class instance object (Which is used to train our model).
+    """
     from sklearn.multioutput import MultiOutputClassifier
     from sklearn.pipeline import Pipeline
     from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
@@ -71,15 +101,16 @@ def build_model():
         ('clf', MultiOutputClassifier(RandomForestClassifier(n_estimators=10, n_jobs=-1)))
     ])
 
-    parameters = {
-        'vect__ngram_range': ((1, 1), (1, 2)),
-        'vect__max_df': (0.5, 0.75, 1.0),
-        'tfidf__use_idf': (True, False),
-        'vect__max_features': (None, 5000),
-        'clf__estimator__n_estimators': [10, 20]
-    }
+    # the below parameters take around 1.5 hrs to complete.
+    # parameters = {
+    #     'vect__ngram_range': ((1, 1), (1, 2)),
+    #     'vect__max_df': (0.5, 0.75, 1.0),
+    #     'tfidf__use_idf': (True, False),
+    #     'vect__max_features': (None, 5000),
+    #     'clf__estimator__n_estimators': [10, 20]
+    # }
 
-    # Grid Search best parameters after running with above parameters.
+    # When ran Grid Search with above parameter the resulting best set of parameters was
     # parameters = {
     #     'vect__max_features': (None, 5000),
     #     'vect__ngram_range': (1, 2),
@@ -88,18 +119,27 @@ def build_model():
     #     'clf__estimator__n_estimators': [20],
     # }
 
-    # Testing parameters
-    # parameters = {
-    #     'vect__ngram_range': [(1, 1)],
-    #     'clf__estimator__n_estimators': [10, 20],
-    # }
+    # Testing parameters - approx execution time 5 mins.
+    parameters = {
+        'vect__ngram_range': [(1, 1)],
+        'clf__estimator__n_estimators': [10, 20],
+    }
 
-    cv = GridSearchCV(estimator=pipeline, param_grid=parameters, scoring='f1_macro', cv=None, n_jobs=-1, verbose=10)
+    cv = GridSearchCV(estimator=pipeline, param_grid=parameters, scoring='f1_macro', cv=None, n_jobs=1, verbose=10)
 
     return cv
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """ Run the ML model and print the resulting ML metrics.
+
+    Args:
+        model: ML model
+        X_test: Feature data nd array
+        Y_test: Target data nd array
+        category_names: list of target classes
+    """
+
     # references:
     # https://stackoverflow.com/questions/38697982/python-scikit-learn-multi-class-multi-label-performance-metrics
     # https://scikit-learn.org/stable/modules/generated/sklearn.metrics.classification_report.html?highlight=report#sklearn.metrics.classification_report
@@ -120,6 +160,13 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def save_model(model, model_filepath):
+    """ Function to save the model in a pickle file for later use.
+
+    Args:
+        model: ML model
+        model_filepath: path where the model will be saved
+    """
+
     import pickle
     pickle.dump(model, open(model_filepath, 'wb'))
 

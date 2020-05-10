@@ -9,15 +9,16 @@
 
 {% block content %}
     <h1 class="text-center">Result</h1>
-        <ul class="list-group">
-            {% for category, classification in classification_result.items() %}
-                {% if classification == 1 %}
-                    <li class="list-group-item list-group-item-success text-center">{{category.replace('_', ' ').title()}}</li>
-                {% else %}
-                    <li class="list-group-item list-group-item-dark text-center">{{category.replace('_', ' ').title()}}</li>
-                {% endif %}
-            {% endfor %}
+    <div class="container-fluid">
+        <div class="row">
+        {% for category, classification in classification_result.items() %}
+            {% if classification == 1 %}
+            <div class="col-sm-3 success bg-primary"><p class="text-md-left text-uppercase font-weight-bold m-auto p-3">{{category.replace('_', ' ').title()}}</p></div>
+            {% else %}
+            <div class="col-sm-3 bg-light"><p class="text-md-left text-uppercase font-weight-bold m-auto p-3">{{category.replace('_', ' ').title()}}</p></div>
 
+            {% endif %}
+        {% endfor %}
         </div>
     </div>
 

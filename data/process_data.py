@@ -1,3 +1,9 @@
+"""
+process_data.py
+--------------------------------------------------
+This script takes the raw data and clean it for later use in ML classifier training.
+"""
+
 # import libraries
 import sys
 
@@ -6,6 +12,15 @@ from sqlalchemy import create_engine
 
 
 def load_data(messages_filepath, categories_filepath):
+    """ Read the raw csv files and return merged data frame.
+
+    Args:
+        messages_filepath: messages input data file path
+        categories_filepath: categories input data file path
+
+    Returns:
+        pd.DataFrame: merged data frame
+    """
     # load messages dataset
     messages = pd.read_csv(messages_filepath)
     messages.head()
@@ -22,6 +37,14 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    """ Reads the data frame and clean the data for later use.
+
+    Args:
+        df: Dataframe containing the merged raw data.
+
+    Returns:
+        pd.DataFrame: Processed cleaned data frame.
+    """
     # create a dataframe of the 36 individual category columns
     categories = df['categories'].str.split(";", expand=True)
     categories.head()
@@ -71,6 +94,12 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    """ Save processed raw data into a SQlite database.
+
+    Args:
+        df: processed data
+        database_filename: Database file name
+    """
     engine = create_engine(f'sqlite:///{database_filename}')
     df.to_sql('cleaned_data', engine, index=False, if_exists='replace')
 
